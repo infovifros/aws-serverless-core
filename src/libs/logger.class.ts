@@ -50,7 +50,7 @@ export class Logger implements LogInterface {
     });
   }
 
-  private maskAll(value: string): string {
+  private maskAll(_value: string): string {
     return '***MASKED***';
   }
 
@@ -89,8 +89,10 @@ export class Logger implements LogInterface {
   private emitLogMessage(msgType: LogType, msg: string, supportingDetails: any[]): void {
     if (supportingDetails.length > 0) {
       const filteredDetails = this.filterSensitiveData(supportingDetails);
+      // eslint-disable-next-line no-console
       console[msgType](`${msgType.toUpperCase()} ${msg}`, filteredDetails);
     } else {
+      // eslint-disable-next-line no-console
       console[msgType](`${msgType.toUpperCase()} ${msg}`);
     }
   }

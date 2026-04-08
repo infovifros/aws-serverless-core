@@ -41,36 +41,27 @@ export interface BaseDynamoDbModel extends GSI5Key {
   expireAt?: number;
 }
 
-export interface DynamoDBQuery extends Omit<QueryCommandInput, 'TableName'> {
-  // Add any additional custom properties if needed
-}
+// Type aliases for types that declare no new members (avoids no-empty-object-type lint error)
+export type DynamoDBQuery = Omit<QueryCommandInput, 'TableName'>;
 
-export interface DynamoDBQueryOptions extends Omit<QueryCommandInput, 'TableName' | ''> {
-  // Add any additional custom properties if needed
-}
+export type DynamoDBQueryOptions = Omit<QueryCommandInput, 'TableName'>;
 
-export interface DynamoDBUpdate {
+export type DynamoDBUpdateOptions = OmitMultiple<
+  UpdateCommandInput,
+  'TableName' | 'Key' | 'UpdateExpression' | 'ExpressionAttributeValues' | 'ExpressionAttributeNames'
+>;
+
+export type DynamoDBReadOptions = OmitMultiple<GetCommandInput, 'TableName' | 'Key' | 'ExpressionAttributeNames'>;
+
+export interface DynamoDBUpdate extends OmitMultiple<
+  UpdateCommandInput,
+  'TableName' | 'UpdateExpression' | 'ExpressionAttributeValues' | 'ExpressionAttributeNames'
+> {
   Item: DynamoDBItem;
 }
-
-export interface DynamoDBUpdateOptions
-  extends OmitMultiple<
-    UpdateCommandInput,
-    'TableName' | 'Key' | 'UpdateExpression' | 'ExpressionAttributeValues' | 'ExpressionAttributeNames'
-  > {}
-
-export interface DynamoDBUpdate
-  extends OmitMultiple<
-    UpdateCommandInput,
-    'TableName' | 'UpdateExpression' | 'ExpressionAttributeValues' | 'ExpressionAttributeNames'
-  > {
-  Item: DynamoDBItem;
-}
-
-export interface DynamoDBReadOptions extends OmitMultiple<GetCommandInput, 'TableName' | 'Key' | 'ExpressionAttributeNames'> {}
 
 export interface DynamoDBItem {
-  [key: string]: any; // Adjust as per your item structure
+  [key: string]: any;
 }
 
-export interface DynamoDBKeys extends Partial<GSI5Key> {}
+export type DynamoDBKeys = Partial<GSI5Key>;

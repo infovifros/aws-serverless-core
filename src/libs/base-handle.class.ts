@@ -10,9 +10,6 @@ import {compressAndEncodeGzip} from './compress';
 
 const logger = new Logger();
 
-// Global cache for environment variables - persists across warm Lambda invocations
-const cachedEnvironmentVariables = new Map<string, {envs: Record<string, string>; createdAt: string}>();
-
 export class HandlerResponse {
   public body: object | string | null;
   public statusCode: number;
@@ -134,8 +131,6 @@ class BaseHandler {
 
     let lambdaParameters = [];
     try {
-      const xAppName = event?.headers?.['x-app-name'];
-      const projectName = process.env.SERVICE_NAME;
       await this.load();
 
       lambdaParameters = await this.localFn(event, context);
@@ -253,7 +248,7 @@ export class APIHandler extends BaseHandler {
       this.resourcesToLoad.forEach((resource: string) => {
         switch (resource) {
           case Resources.LOGGER: {
-            // @ts-ignore
+            // @ts-expect-error dynamic resource map
             resourcesResult[Resources.LOGGER] = logger;
             break;
           }
@@ -263,12 +258,12 @@ export class APIHandler extends BaseHandler {
             break;
           }
           case Resources.UUIDV4: {
-            // @ts-ignore
+            // @ts-expect-error dynamic resource map
             resourcesResult[Resources.UUIDV4] = uuidv4;
             break;
           }
           case Resources.STATUS_CODES: {
-            // @ts-ignore
+            // @ts-expect-error dynamic resource map
             resourcesResult[Resources.STATUS_CODES] = <StatusCodes>StatusCodes;
             break;
           }
@@ -293,7 +288,7 @@ export class APIHandler extends BaseHandler {
     for (const param in event.queryStringParameters) {
       try {
         queryStringParameters[param] = JSON.parse(event.queryStringParameters[param]);
-      } catch (error) {
+      } catch (_error) {
         queryStringParameters[param] = event.queryStringParameters[param];
       }
     }
@@ -408,7 +403,7 @@ export class APIAsyncHandler extends BaseHandler {
       this.resourcesToLoad.forEach((resource: string) => {
         switch (resource) {
           case Resources.LOGGER: {
-            // @ts-ignore
+            // @ts-expect-error dynamic resource map
             resourcesResult[Resources.LOGGER] = logger;
             break;
           }
@@ -418,12 +413,12 @@ export class APIAsyncHandler extends BaseHandler {
             break;
           }
           case Resources.UUIDV4: {
-            // @ts-ignore
+            // @ts-expect-error dynamic resource map
             resourcesResult[Resources.UUIDV4] = uuidv4;
             break;
           }
           case Resources.STATUS_CODES: {
-            // @ts-ignore
+            // @ts-expect-error dynamic resource map
             resourcesResult[Resources.STATUS_CODES] = <StatusCodes>StatusCodes;
             break;
           }
@@ -448,7 +443,7 @@ export class APIAsyncHandler extends BaseHandler {
     for (const param in event.queryStringParameters) {
       try {
         queryStringParameters[param] = JSON.parse(event.queryStringParameters[param]);
-      } catch (error) {
+      } catch (_error) {
         queryStringParameters[param] = event.queryStringParameters[param];
       }
     }

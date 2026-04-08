@@ -13,6 +13,7 @@
     "prettier/prettier": "error",
     "id-length": ["error", { "min": 2 }],
     "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }],
     "no-console": "error"
   }
 }
