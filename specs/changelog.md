@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to `@vifros/aws-serverless-core` will be documented here.
+All notable changes to `@infovifros/aws-serverless-core` will be documented here.
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
@@ -21,4 +21,4 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 - `Logger` — Structured logger with automatic masking of `password`, `email`, and `phoneNumber` fields
 - `compressAndEncodeGzip` / `compressAndEncodeBrotli` — Compression utilities
 - Full TypeScript interfaces: `BaseDynamoDbModel`, `GSI1–5Key`, `DynamoDBQuery`, `LambdaResponse`, `LogInterface`, `Request`, etc.
-- npm workspace setup at VERBOS root — `api-reader` consumes `@vifros/aws-serverless-core` via workspace symlink
+- npm workspace setup at VERBOS root — `api-reader` consumes `@infovifros/aws-serverless-core` via workspace symlink
