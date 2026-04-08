@@ -1,5 +1,5 @@
 {
-  "name": "@infovifros/aws-serverless-core",
+  "name": "@vifros/aws-serverless-core",
   "version": "1.0.0",
   "description": "Core library for serverless services — Lambda handlers, DynamoDB base model, Logger, and utilities.",
   "main": "src/index.ts",

@@ -1,6 +1,6 @@
-# @infovifros/aws-serverless-core — Specs
+# @vifros/aws-serverless-core — Specs
 
-This folder is the single source of truth for planning, tracking, and documenting the evolution of `@infovifros/aws-serverless-core`.
+This folder is the single source of truth for planning, tracking, and documenting the evolution of `@vifros/aws-serverless-core`.
 
 ## Structure
 
