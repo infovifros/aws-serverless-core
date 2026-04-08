@@ -30,13 +30,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Set version from release tag
-        # Strips the leading "v" from the tag (v1.2.3 → 1.2.3) and updates package.json
-        run: npm version "${{ github.event.release.tag_name }}" --no-git-tag-version
-        env:
-          # Allow npm version to run without a git working tree
-          NPM_CONFIG_GIT_TAG_VERSION: 'false'
-
       - name: Publish
         run: npm publish --access public --provenance
         env:

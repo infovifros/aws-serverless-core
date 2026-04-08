@@ -4,7 +4,7 @@
 
 ## v1.0.0 — Initial extraction (current)
 
-- [x] Extract `core/` from `api-reader` into standalone `@infovifros/aws-serverless-core` npm package
+- [x] Extract `core/` from `api-reader` into standalone `@vifros/aws-serverless-core` npm package
 - [x] Set up npm workspaces with `api-reader` at VERBOS root
 - [x] `HandlerResponse`, `HandlerError`, `BaseHandler`, `APIHandler`, `EventSQSHandler`, `APIAsyncHandler`
 - [x] `DynamoDBBaseModel` with CRUD, batch get, soft delete, pagination
