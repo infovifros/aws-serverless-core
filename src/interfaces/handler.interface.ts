@@ -8,7 +8,7 @@ export interface LambdaResponse {
 }
 
 export enum LambdaResponseLogger {
-  Hide = 'hide'
+  Hide = 'hide',
 }
 
 export enum Resources {
