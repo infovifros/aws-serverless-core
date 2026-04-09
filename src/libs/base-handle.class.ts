@@ -70,11 +70,7 @@ export class HandlerResponse {
   public readonly statusCode: number;
   public readonly options: HandlerOptions | undefined;
 
-  constructor(
-    body: object | string | null,
-    statusCode: number = StatusCodes.OK,
-    options?: HandlerOptions,
-  ) {
+  constructor(body: object | string | null, statusCode: number = StatusCodes.OK, options?: HandlerOptions) {
     this.body = body;
     this.statusCode = statusCode;
     this.options = options;
@@ -114,8 +110,7 @@ export class HandlerError extends Error {
     captureStackTrace: boolean = true,
     alert: boolean = true,
   ) {
-    const normalisedMessage =
-      typeof message === 'object' ? JSON.stringify(message) : message;
+    const normalisedMessage = typeof message === 'object' ? JSON.stringify(message) : message;
 
     super(normalisedMessage);
     this.message = normalisedMessage;
@@ -226,22 +221,13 @@ class BaseHandler {
    * @param schemaValidator - AJV-compatible JSON Schema object.
    * @param requestPayload  - The data to validate (object or array).
    */
-  protected async validateRequest(
-    schemaValidator: object,
-    requestPayload: unknown,
-  ): Promise<void> {
+  protected async validateRequest(schemaValidator: object, requestPayload: unknown): Promise<void> {
     const validateFn: ValidateFunction = this.ajv.compile(schemaValidator);
     const isValid = validateFn(requestPayload);
 
     if (!isValid) {
-      logger.error(
-        '[BaseHandler.validateRequest] Schema validation failed',
-        validateFn.errors,
-      );
-      throw new HandlerError(
-        `Schema Validation Errors ${JSON.stringify(validateFn.errors)}`,
-        StatusCodes.CONFLICT,
-      );
+      logger.error('[BaseHandler.validateRequest] Schema validation failed', validateFn.errors);
+      throw new HandlerError(`Schema Validation Errors ${JSON.stringify(validateFn.errors)}`, StatusCodes.CONFLICT);
     }
   }
 
@@ -291,11 +277,7 @@ class BaseHandler {
    * @param payload  - Serialisable key-value payload.
    * @param topicArn - Full ARN of the destination SNS topic.
    */
-  protected async sendSNSMessage(
-    subject: string,
-    payload: Record<string, unknown>,
-    topicArn: string,
-  ) {
+  protected async sendSNSMessage(subject: string, payload: Record<string, unknown>, topicArn: string) {
     logger.info('[BaseHandler.sendSNSMessage] Publishing SNS message', {subject, topicArn});
 
     const publishCommandParams = {
@@ -318,8 +300,7 @@ class BaseHandler {
       const awsError = snsPublishError as {Message?: string; errorMessage?: string};
       if (awsError?.Message === 'Invalid parameter: Message too long') {
         publishCommandParams.Message =
-          awsError?.errorMessage ??
-          'SNS publish failed — payload too large, check CloudWatch logs for full details';
+          awsError?.errorMessage ?? 'SNS publish failed — payload too large, check CloudWatch logs for full details';
 
         const retryPublishCommand = new PublishCommand(publishCommandParams);
         return this.snsClient.send(retryPublishCommand);
@@ -345,10 +326,7 @@ class BaseHandler {
    * Publishes an SNS error alert for an unhandled `HandlerError`, including a
    * sanitised copy of the triggering event with sensitive fields redacted.
    */
-  private async sendErrorAlert(
-    error: HandlerError,
-    rawEvent: Record<string, unknown>,
-  ): Promise<void> {
+  private async sendErrorAlert(error: HandlerError, rawEvent: Record<string, unknown>): Promise<void> {
     const sanitisedEvent = this.sanitiseEventForLogging(rawEvent);
 
     const errorAlertPayload: SnsErrorPayload = {
@@ -375,9 +353,7 @@ class BaseHandler {
    * - `body.base64`            — may contain large binary payloads
    * - `headers.authorization`  — Bearer / Basic tokens must not leave the function
    */
-  private sanitiseEventForLogging(
-    rawEvent: Record<string, unknown>,
-  ): Record<string, unknown> {
+  private sanitiseEventForLogging(rawEvent: Record<string, unknown>): Record<string, unknown> {
     const sanitisedEvent: Record<string, unknown> = {...rawEvent};
 
     if (sanitisedEvent.body) {
@@ -470,17 +446,10 @@ class BaseHandler {
    * response object, applying gzip compression when the caller signals support
    * via the `Accept-Encoding: gzip` request header.
    */
-  private async buildLambdaResponse(
-    handlerFnResponse: HandlerResponse | null,
-    rawEvent: Record<string, unknown>,
-  ) {
+  private async buildLambdaResponse(handlerFnResponse: HandlerResponse | null, rawEvent: Record<string, unknown>) {
     if (!(handlerFnResponse instanceof HandlerResponse)) {
-      logger.error(
-        '[BaseHandler.lambdaHandler] Handler function did not return a HandlerResponse instance',
-      );
-      throw new HandlerError(
-        'The handler function must return a HandlerResponse instance',
-      );
+      logger.error('[BaseHandler.lambdaHandler] Handler function did not return a HandlerResponse instance');
+      throw new HandlerError('The handler function must return a HandlerResponse instance');
     }
 
     const serialisedResponse = this.serialiseHandlerResponse(handlerFnResponse);
@@ -493,8 +462,7 @@ class BaseHandler {
       });
     }
 
-    const acceptEncodingHeader =
-      (rawEvent?.headers as Record<string, string> | undefined)?.['accept-encoding'] ?? '';
+    const acceptEncodingHeader = (rawEvent?.headers as Record<string, string> | undefined)?.['accept-encoding'] ?? '';
     let isBase64Encoded = Boolean(serialisedResponse.body && acceptEncodingHeader.includes('gzip'));
 
     logger.debug('[BaseHandler.lambdaHandler] Compression check', {
@@ -507,10 +475,7 @@ class BaseHandler {
         serialisedResponse.body = await compressAndEncodeGzip(serialisedResponse.body);
         logger.info('[BaseHandler.lambdaHandler] Response body compressed with gzip');
       } catch (compressionError: unknown) {
-        logger.warn(
-          '[BaseHandler.lambdaHandler] Gzip compression failed — sending uncompressed response',
-          compressionError,
-        );
+        logger.warn('[BaseHandler.lambdaHandler] Gzip compression failed — sending uncompressed response', compressionError);
         isBase64Encoded = false;
       }
     }
@@ -623,18 +588,12 @@ export class APIHandler extends BaseHandler {
    * request body into a single flat object and attaches the normalised headers.
    */
   private parseApiGatewayEvent(event: APIGatewayProxyEvent): NormalizedApiRequest {
-    const parsedQueryStringParameters = this.parseQueryStringParameters(
-      event.queryStringParameters,
-    );
-    const parsedBody: Record<string, unknown> = event.body
-      ? (JSON.parse(event.body) as Record<string, unknown>)
-      : {};
+    const parsedQueryStringParameters = this.parseQueryStringParameters(event.queryStringParameters);
+    const parsedBody: Record<string, unknown> = event.body ? (JSON.parse(event.body) as Record<string, unknown>) : {};
     // APIGatewayProxyEvent path parameters are typed as `string | undefined`;
     // undefined entries are filtered out before merging into the request object.
     const resolvedPathParameters: Record<string, string> = Object.fromEntries(
-      Object.entries(event.pathParameters ?? {}).filter(
-        (entry): entry is [string, string] => entry[1] !== undefined,
-      ),
+      Object.entries(event.pathParameters ?? {}).filter((entry): entry is [string, string] => entry[1] !== undefined),
     );
     const rawIncomingHeaders: Record<string, string | undefined> = event.headers ?? {};
 
@@ -680,21 +639,14 @@ export class APIHandler extends BaseHandler {
    * are replaced with generated UUIDs or descriptive fallback strings rather
    * than `undefined`, so the handler always receives a complete set.
    */
-  private extractNormalisedTracingHeaders(
-    incomingHeaders: Record<string, string | undefined>,
-  ): NormalizedRequestHeaders {
+  private extractNormalisedTracingHeaders(incomingHeaders: Record<string, string | undefined>): NormalizedRequestHeaders {
     return {
-      'x-transaction-request-id':
-        incomingHeaders['x-transaction-request-id'] ?? uuidv4(),
+      'x-transaction-request-id': incomingHeaders['x-transaction-request-id'] ?? uuidv4(),
       'x-tracer-api-request-id': uuidv4(),
-      'x-remote-application-name':
-        incomingHeaders['x-remote-application-name'] ?? 'REMOTE_APP_NAME not provided',
-      'x-app-name':
-        incomingHeaders['x-app-name'] ?? 'APP_NAME not provided',
-      'x-app-version':
-        incomingHeaders['x-app-version'] ?? 'APP_VERSION not provided',
-      'x-user-token':
-        incomingHeaders['x-user-token'] ?? 'USER_TOKEN not provided',
+      'x-remote-application-name': incomingHeaders['x-remote-application-name'] ?? 'REMOTE_APP_NAME not provided',
+      'x-app-name': incomingHeaders['x-app-name'] ?? 'APP_NAME not provided',
+      'x-app-version': incomingHeaders['x-app-version'] ?? 'APP_VERSION not provided',
+      'x-user-token': incomingHeaders['x-user-token'] ?? 'USER_TOKEN not provided',
     };
   }
 
@@ -703,9 +655,7 @@ export class APIHandler extends BaseHandler {
    * The caller will replace them with the normalised versions from
    * `extractNormalisedTracingHeaders()`.
    */
-  private stripTracingHeaders(
-    incomingHeaders: Record<string, string | undefined>,
-  ): Record<string, string | undefined> {
+  private stripTracingHeaders(incomingHeaders: Record<string, string | undefined>): Record<string, string | undefined> {
     const strippedHeaders = {...incomingHeaders};
     for (const traceableHeaderKey of TRACEABLE_HEADER_KEYS) {
       delete strippedHeaders[traceableHeaderKey];
@@ -756,10 +706,7 @@ export class EventSQSHandler extends BaseHandler {
 
     if (!event.Records || !Array.isArray(event.Records)) {
       logger.error('[EventSQSHandler.localFn] Event is missing a Records array');
-      throw new HandlerError(
-        'SQS event must contain a Records array',
-        StatusCodes.BAD_REQUEST,
-      );
+      throw new HandlerError('SQS event must contain a Records array', StatusCodes.BAD_REQUEST);
     }
 
     logger.info('[EventSQSHandler.localFn] Parsing SQS records', {
@@ -777,10 +724,7 @@ export class EventSQSHandler extends BaseHandler {
           messageId: sqsRecord.messageId,
           error: recordParseError,
         });
-        throw new HandlerError(
-          `Failed to parse SQS record body for message ${sqsRecord.messageId}`,
-          StatusCodes.BAD_REQUEST,
-        );
+        throw new HandlerError(`Failed to parse SQS record body for message ${sqsRecord.messageId}`, StatusCodes.BAD_REQUEST);
       }
     }
 
@@ -819,10 +763,7 @@ export class APIAsyncHandler extends APIHandler {
    * Sets `callbackWaitsForEmptyEventLoop` to `false` on the Lambda context
    * before handing off to the parent `APIHandler` parsing logic.
    */
-  protected async localFn(
-    event: APIGatewayProxyEvent,
-    context: Context,
-  ): Promise<unknown[]> {
+  protected async localFn(event: APIGatewayProxyEvent, context: Context): Promise<unknown[]> {
     context.callbackWaitsForEmptyEventLoop = false;
     return super.localFn(event, context);
   }
