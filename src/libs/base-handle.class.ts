@@ -28,8 +28,15 @@ const logger = new Logger();
  * Signature every Lambda handler function must satisfy.
  * Positional arguments are supplied by `localFn()`; the last argument is
  * always the `ResourceMap` injected by `addResourcesFn()`.
+ *
+ * `any[]` is intentional here — handler functions are defined by the consumer
+ * with their own strongly-typed parameter signatures (e.g. `(req: MyRequest) => ...`).
+ * Using `unknown[]` would cause a TypeScript contravariance error because the
+ * runtime calls `handlerFn(...parsedArgs)` with typed values, not `unknown` ones.
+ * The return type (`Promise<HandlerResponse>`) is still strictly enforced.
  */
-type HandlerFunction = (...args: unknown[]) => Promise<HandlerResponse>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type HandlerFunction = (...args: any[]) => Promise<HandlerResponse>;
 
 // ─── Internal constants ───────────────────────────────────────────────────────
 
@@ -569,8 +576,12 @@ export class APIHandler extends BaseHandler {
     const normalisedRequest = this.parseApiGatewayEvent(event);
 
     logger.info('[APIHandler.localFn] Request parsed', {
-      path: event.path,
-      httpMethod: event.httpMethod,
+      // event.path / event.httpMethod exist in API Gateway REST API (payload format 1.0).
+      // In HTTP API (payload format 2.0) and some serverless-offline configs the same
+      // information lives under rawPath / requestContext.http — we fall back to those
+      // so the log is always populated regardless of the gateway type.
+      path: event.path ?? this.resolveRawPath(event),
+      httpMethod: event.httpMethod ?? this.resolveHttpMethod(event),
       transactionId: normalisedRequest.headers['x-transaction-request-id'],
     });
 
@@ -582,6 +593,32 @@ export class APIHandler extends BaseHandler {
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
+
+  /**
+   * Extracts the request path when the event uses API Gateway HTTP API format
+   * (payload format 2.0) instead of the REST API format (payload format 1.0).
+   *
+   * Format 1.0 → `event.path`          (handled by the caller before this)
+   * Format 2.0 → `event.rawPath`
+   */
+  private resolveRawPath(event: APIGatewayProxyEvent): string {
+    const rawEvent = event as unknown as Record<string, unknown>;
+    return (rawEvent['rawPath'] as string | undefined) ?? 'N/A';
+  }
+
+  /**
+   * Extracts the HTTP method when the event uses API Gateway HTTP API format
+   * (payload format 2.0) instead of the REST API format (payload format 1.0).
+   *
+   * Format 1.0 → `event.httpMethod`                          (handled by the caller)
+   * Format 2.0 → `event.requestContext.http.method`
+   */
+  private resolveHttpMethod(event: APIGatewayProxyEvent): string {
+    const rawEvent = event as unknown as Record<string, unknown>;
+    const requestContext = rawEvent['requestContext'] as Record<string, unknown> | undefined;
+    const httpContext = requestContext?.['http'] as Record<string, unknown> | undefined;
+    return (httpContext?.['method'] as string | undefined) ?? 'N/A';
+  }
 
   /**
    * Merges path parameters, parsed query-string parameters, and the parsed
